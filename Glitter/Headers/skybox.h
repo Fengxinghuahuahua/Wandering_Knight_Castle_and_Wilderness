@@ -15,13 +15,13 @@
 
 #include <vector>
 
-extern Camera* currentCamera;
-extern const GLuint SCR_WIDTH, SCR_HEIGHT;
-
 class Skybox {
+	private:
+		Camera** _current_camera;
 public:
-    Skybox(const std::vector<std::string>& faces)
+    Skybox(const std::vector<std::string>& faces,Camera** curr)
     {
+		_current_camera = curr;
         glGenVertexArrays(1, &cubeVAO);
         glGenBuffers(1, &cubeVBO);
         glBindVertexArray(cubeVAO);
@@ -53,15 +53,14 @@ public:
     void render()
     {
         glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = currentCamera->GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(currentCamera->Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f);
+        glm::mat4 view = (*_current_camera)->GetViewMatrix();
+        glm::mat4 projection = (*_current_camera)->getProjection();
 
-        view = currentCamera->GetViewMatrix();
+        view = (*_current_camera)->GetViewMatrix();
 
-        // ��Ⱦ��պￄ1�7
         glDepthFunc(GL_LEQUAL);
         skyShader.use();
-        view = glm::mat4(glm::mat3(currentCamera->GetViewMatrix()));
+        view = glm::mat4(glm::mat3((*_current_camera)->GetViewMatrix()));
         skyShader.setMat4("view", view);
         skyShader.setMat4("projection", projection);
         glBindVertexArray(skyboxVAO);

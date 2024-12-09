@@ -8,7 +8,9 @@ in VS_OUT {
     vec2 TexCoords;
     vec3 vertexColor;
     vec4 FragPosLightSpace;
+	mat3 TBN;
 } fs_in;
+
 
 in MT_P {
     float ambient;
@@ -18,10 +20,12 @@ in MT_P {
 } mt_p;
 
 uniform sampler2D texture_diffuse1;
+uniform sampler2D normalMap;
 uniform sampler2D shadowMap;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
+uniform int isTerrain;
 
 uniform int depthTest;
 
@@ -64,8 +68,16 @@ void main()
         vec4 texcolor = (fs_in.tex == 1) ? texture(texture_diffuse1, fs_in.TexCoords) : vec4(fs_in.vertexColor, 1.0f);
         if (texcolor.a < 0.1) discard;
         vec3 color = texcolor.rgb;
-
+		
         vec3 normal = normalize(fs_in.Normal);
+
+		if(isTerrain==1){
+		    vec3 tangentNormal = (texture(normalMap, fs_in.TexCoords).rgb * 2.0 - 1.0);
+		    // 转换到世界空间法线
+		    vec3 worldNormal = normalize(fs_in.TBN * tangentNormal);
+			normal = worldNormal;
+		}
+
         vec3 lightColor = vec3(1.0f, 1.0f, 0.95f);
         // Ambient
         vec3 ambient = color * mt_p.ambient;

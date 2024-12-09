@@ -9,6 +9,7 @@
         // 初始化人物为待机
         is_walking = false;
         currentAnimation = idleAnimation;
+		characterPosition  = glm::vec3(0.f);//你不初始化??????????
         animator = new Animator(idleAnimation);
     }
     Knight::~Knight(){

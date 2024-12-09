@@ -16,11 +16,10 @@ option(GLFW_BUILD_EXAMPLES OFF)
 option(GLFW_BUILD_TESTS OFF)
 add_subdirectory(Glitter/Vendor/glfw)
 
-option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
-option(ASSIMP_BUILD_SAMPLES OFF)
-option(ASSIMP_BUILD_TESTS OFF)
-add_subdirectory(Glitter/Vendor/assimp)
-
+#option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+#option(ASSIMP_BUILD_SAMPLES OFF)
+#option(ASSIMP_BUILD_TESTS OFF)
+#add_subdirectory(Glitter/Vendor/assimp)
 option(BUILD_BULLET2_DEMOS OFF)
 option(BUILD_CPU_DEMOS OFF)
 option(BUILD_EXTRAS OFF)
@@ -29,18 +28,25 @@ option(BUILD_UNIT_TESTS OFF)
 add_subdirectory(Glitter/Vendor/bullet)
 
 include_directories(Glitter/Headers/
-                    Glitter/Vendor/assimp/include/
                     Glitter/Vendor/bullet/src/
                     Glitter/Vendor/glad/include/
                     Glitter/Vendor/glfw/include/
                     Glitter/Vendor/glm/
-                    Glitter/Vendor/stb/)
+                    Glitter/Vendor/stb/
+					Glitter/Vendor/imgui/
+					Glitter/Vendor/imgui/backends/)
+
 
 file(GLOB VENDORS_SOURCES Glitter/Vendor/glad/src/glad.c)
 file(GLOB PROJECT_HEADERS Glitter/Headers/*.hpp
                           Glitter/Headers/*.h)
+
 file(GLOB PROJECT_SOURCES Glitter/Sources/*.cpp
-                          Glitter/Sources/*.hpp  )
+                          Glitter/Sources/*.hpp
+						  Glitter/Vendor/imgui/*.cpp
+						  Glitter/Vendor/imgui/backends/*.cpp
+						  Glitter/Vendor/imgui/*.hpp
+						)
 file(GLOB PROJECT_SHADERS Glitter/Shaders/*.comp
                           Glitter/Shaders/*.frag
                           Glitter/Shaders/*.geom
@@ -62,8 +68,9 @@ add_definitions(-DGLFW_INCLUDE_NONE
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
                                ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
                                ${VENDORS_SOURCES})
-target_link_libraries(${PROJECT_NAME} assimp glfw
-                      ${GLFW_LIBRARIES} ${GLAD_LIBRARIES}
+find_library(ASSIMP_LIBRARY assimp  ${PROJECT_SOURCE_DIR}/lib/)
+target_link_libraries(${PROJECT_NAME} ${ASSIMP_LIBRARY} glfw
+                      ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${OPENGL_LIBRARIES}
                       BulletDynamics BulletCollision LinearMath)
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
@@ -72,3 +79,14 @@ add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Glitter/Shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>
     DEPENDS ${PROJECT_SHADERS})
+
+# 设定库和可执行文件的路径
+set(LIBRARY_PATH "${CMAKE_SOURCE_DIR}/lib/libassimp-5.dll")
+set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build/Glitter")
+
+# 在可执行文件构建之后复制动态库
+add_custom_command(
+	TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${LIBRARY_PATH} $<TARGET_FILE_DIR:Glitter>
+)

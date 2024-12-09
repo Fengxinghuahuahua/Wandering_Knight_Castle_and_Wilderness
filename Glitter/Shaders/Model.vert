@@ -2,7 +2,6 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
-
 out VS_OUT {
     vec3 FragPos;
     vec3 Normal;
@@ -10,6 +9,7 @@ out VS_OUT {
     vec2 TexCoords;
     vec3 vertexColor;
     vec4 FragPosLightSpace;
+	mat3 TBN;
 } vs_out;
 
 out MT_P {

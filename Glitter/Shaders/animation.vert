@@ -26,6 +26,7 @@ out VS_OUT {
     vec2 TexCoords;
     vec3 vertexColor;
     vec4 FragPosLightSpace;
+	mat3 TBN;
 } vs_out;
 
 out MT_P {
