@@ -8,6 +8,8 @@
 #include "animation.h"
 #include "bone.h"
 
+class Knight;
+
 class Animator
 {
 public:
@@ -15,6 +17,7 @@ public:
 	{
 		m_CurrentTime = 0.0;
 		m_CurrentAnimation = animation;
+		iter = 0;
 
 		m_FinalBoneMatrices.reserve(100);
 
@@ -28,15 +31,24 @@ public:
 		if (m_CurrentAnimation)
 		{
 			m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
+			if(m_CurrentTime >= m_CurrentAnimation->GetDuration()){
+				iter++;
+			}
 			m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
 			CalculateBoneTransform(&m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f));
 		}
 	}
 
+	void ResetAnimation()
+	{
+		m_CurrentTime = 0.0f;
+		iter = 0;
+		CalculateBoneTransform(&m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+	}
 	void PlayAnimation(Animation* pAnimation)
 	{
+		ResetAnimation();
 		m_CurrentAnimation = pAnimation;
-		m_CurrentTime = 0.0f;
 	}
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
@@ -71,10 +83,24 @@ public:
 		return m_FinalBoneMatrices;
 	}
 
+	void SetFinalBoneMatrices(const std::vector<glm::mat4>& finalBoneMatrices)
+	{
+		m_FinalBoneMatrices = finalBoneMatrices;
+	}
+	
+	inline int GetIter(){return iter;}
+
+	inline float GetDuration(){return m_CurrentAnimation->GetDuration();}
+
+	inline float GetAniCurrentTime(){return m_CurrentTime;}
+
 private:
 	std::vector<glm::mat4> m_FinalBoneMatrices;
 	Animation* m_CurrentAnimation;
 	float m_CurrentTime;
 	float m_DeltaTime;
+	int iter;
+	friend class Knight;
 
+	inline Animation* GetCurrenAnimation(){return m_CurrentAnimation;}
 };

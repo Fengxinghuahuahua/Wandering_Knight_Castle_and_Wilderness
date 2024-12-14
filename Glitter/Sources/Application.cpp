@@ -1,5 +1,5 @@
 #include "Application.h"
-#include "BulletInverseDynamics/IDMath.hpp"
+
 #include "GLFW/glfw3.h"
 #include "glm/ext/vector_float3.hpp"
 #include "imgui.h"
@@ -11,6 +11,20 @@ void Application::initGLAD(){
         std::cout << "Failed to initialize GLAD" << std::endl;
     }
 }
+
+void Application::initBullet(){
+    // Bullet 基本组件
+    btDefaultCollisionConfiguration* collisionConfig = new btDefaultCollisionConfiguration();
+    btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfig);
+    btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase();
+    btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
+
+    // 动力学世界
+    btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfig);
+    dynamicsWorld->setGravity(btVector3(0, -9.8, 0));  // 设置重力
+
+}
+
 void Application::initGLFW(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -94,7 +108,7 @@ void Application::run(){
 }
 void Application::render(){
 		processInput();
-        _knight->Update(_DeltaTime, _current_camera == _camera_3P, _current_camera, _WASD_state);
+        _knight->Update(_DeltaTime, _current_camera == _camera_3P, _current_camera, _Knight_KB);
 		glm::vec3 position = _knight->GetPosition();
 		glm::vec3 new_position = glm::vec3(position.x,_terrain->getHeight(position.x, position.z),position.z);
 		_knight->SetPosition(new_position);
@@ -241,6 +255,7 @@ void Application::init(){
 		aspect
 	);
 	_current_camera = _camera_3P;
+    _Knight_KB.resize(KB_KEYS::KK_END);
 
 	initGUI();
 	initAssets();
@@ -305,11 +320,17 @@ void Application::renderGUI(){
 
 void Application::initAssets(){
 	_house = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/house/house2.fbx");
-	_tree1 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/Tree.pmx");
+	_tree1 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/Tree/Tree.pmx");
 	_tree2 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/06/054.obj");
 	_tree3 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/07/053.obj");
 	_tree4 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/08/051.obj");
-	_knight = new Knight(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/Idle.dae", std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/Walking.dae");
+    std::vector<std::string> knight_model_paths = {std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Idle.dae", 
+                                                   std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Walking.dae",
+                                                   std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Running.dae",
+                                                   std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Jump.dae",
+                                                   std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/RunningJump.dae",
+                                                   std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Running_Turn_180.dae",};
+	_knight = new Knight(knight_model_paths);
 	_grass = new Grass();
 	_terrain = new Terrain();
 	_nature_light = new NatureLight(glm::vec3(0.0f, 6.0f, 6.0f), glm::vec3(0.95f, 0.90f, 0.8f), &_current_camera,1.0f);
@@ -353,11 +374,8 @@ void Application::processInput(){
             _isPressedJ = false;
         }        
     }
-	if(glfwGetKey(_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-		_knight->CalSpeed(_speed*_DeltaTime*3);
-	}else
-		_knight->CalSpeed(_speed*_DeltaTime);
-	_knight->SetWalking(false);
+
+    // free Mouse
     if (glfwGetKey(_Window, GLFW_KEY_Q) == GLFW_PRESS) {
         _flagCallMouse = false;
     } else {
@@ -366,7 +384,9 @@ void Application::processInput(){
         //glfwSetCursorPos(_Window, _LastMouseX / 2, _LastMouseY / 2);
         _flagCallMouse = true;
     }
-    if (glfwGetKey(_Window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+
+    // camera control
+    if (glfwGetKey(_Window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || glfwGetKey(_Window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
         if (!_spacePressed) {
             if (_current_camera == _camera_3P) {
                 _current_camera = _camera_1P;
@@ -379,18 +399,26 @@ void Application::processInput(){
     } else {
         _spacePressed = false;
     }
-    _WASD_state = WASD_State::IDLE;
+
+    //knight control
+    std::fill(_Knight_KB.begin(), _Knight_KB.end(), false);
+    if(glfwGetKey(_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+        _Knight_KB[KB_KEYS::SHIFT] = true;
+    }
     if (glfwGetKey(_Window, GLFW_KEY_W) == GLFW_PRESS) {
-        _WASD_state = WASD_State::W_Pressed;
+        _Knight_KB[KB_KEYS::W] = true;
     }
     if (glfwGetKey(_Window, GLFW_KEY_S) == GLFW_PRESS) {
-        _WASD_state = WASD_State::S_Pressed;
+        _Knight_KB[KB_KEYS::S] = true;
     }
     if (glfwGetKey(_Window, GLFW_KEY_A) == GLFW_PRESS) {
-        _WASD_state = WASD_State::A_Pressed;
+        _Knight_KB[KB_KEYS::A] = true;
     }
     if (glfwGetKey(_Window, GLFW_KEY_D) == GLFW_PRESS) {
-        _WASD_state = WASD_State::D_Pressed;
+        _Knight_KB[KB_KEYS::D] = true;
+    }
+    if (glfwGetKey(_Window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        _Knight_KB[KB_KEYS::SPACE] = true;
     }
 
 	if(_mouse_mode==0)
@@ -406,15 +434,12 @@ void Application::processInput(){
 
         _camera_1P->Position = _knight->GetPosition() + glm::vec3(0.0f, _camera_1P_height, 0.0f)
             + forward * glm::vec3(_camera_1P_font, 0.0f, _camera_1P_font);
-        cout << "forward * glm::vec3(camera_1P_font, 0.0f, camera_1P_font)" << (forward * glm::vec3(_camera_1P_font, 0.0f, _camera_1P_font)).z << (forward * glm::vec3(_camera_1P_font, 0.0f, _camera_1P_font)).x << endl;
-        cout << "forward:" << forward.x << "," << forward.y << "," << forward.z << endl;
-        cout << "knight: " << _knight->GetPosition().x << "," << _knight->GetPosition().y << "," << _knight->GetPosition().z << endl;
- //       cout << "Camera_1P Position: " << _camera_1P->Position.x << "," << _camera_1P->Position.y << "," << _camera_1P_Position.z << endl;
         _camera_1P->Front.x = cos(glm::radians(-_camera_1P->Yaw - 90.0f));
         _camera_1P->Front.y = sin(glm::radians(_camera_1P->Pitch));
         _camera_1P->Front.z = sin(glm::radians(-_camera_1P->Yaw - 90.0f));
         _knight->SetYaw(_camera_1P->Yaw + 180.0f);
-    } else if (_current_camera == _camera_3P) {
+    } 
+    else if (_current_camera == _camera_3P) {
         float radius = glm::length(_camera_3P_Position);
 
         glm::mat4 horizontalRotation = glm::rotate(glm::mat4(1.0f),

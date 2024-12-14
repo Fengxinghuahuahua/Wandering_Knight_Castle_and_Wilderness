@@ -11,12 +11,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
+#include <btBulletDynamicsCommon.h>
+#include <btBulletCollisionCommon.h>
 #include <camera.h>
 #include <shader_m.h>
 #include <gui.hpp>
 #include <Knight.h>
 #include <Grass.h>
 #include <Terrain.h>
+
 class Application{
 	private:
 		float _Width = 1920;
@@ -48,7 +51,6 @@ class Application{
 		Skybox* _skybox;
 
 		GLFWwindow *_Window = nullptr;
-		float _speed = 1.f;
 
 		Camera* _camera_3P;
 		Camera* _camera_1P;
@@ -61,7 +63,8 @@ class Application{
         float _DeltaTime = 0.0f;
 		bool _flagCallMouse = true;
 		bool _spacePressed = false;
-		int _WASD_state = WASD_State::IDLE;
+
+		std::vector<bool> _Knight_KB;
 
         bool _FirstMouse = true;
         double _LastMouseX;
@@ -86,6 +89,7 @@ class Application{
 		std::vector<glm::vec3> _randPositions;
 		void initGLAD();
 		void initGLFW();
+		void initBullet();
 		void initAssets();
 		void render();
 		void handleInput();
@@ -123,7 +127,7 @@ class Application{
             double xoffset = xpos - app->_LastMouseX;
             double yoffset = app->_LastMouseY - ypos; // reversed since y-coordinates range from bottom to top
 													  //
-			std::cout<<xoffset<<" "<<yoffset<<std::endl;
+			// std::cout<<xoffset<<" "<<yoffset<<std::endl;
     		float sensitivity = 0.1f;
     		xoffset *= sensitivity;
     		yoffset *= sensitivity;
