@@ -19,6 +19,7 @@
 #include <Knight.h>
 #include <Grass.h>
 #include <Terrain.h>
+#include <PhysicsWorld.hpp>
 
 class Application{
 	private:
@@ -28,7 +29,6 @@ class Application{
 		int _selector;
 
 		glm::vec3 _trans[6];
-
 		Model* _house;
 		Model* _tree1;
 		Model* _tree2;
@@ -47,6 +47,9 @@ class Application{
 
 		NatureLight* _nature_light;
 		DepthMap * _depth_map;
+
+		//physics world
+		btRigidBody* _houseBody, *_knightBody;
 		
 		Skybox* _skybox;
 
@@ -55,8 +58,11 @@ class Application{
 		Camera* _camera_3P;
 		Camera* _camera_1P;
 		Camera* _current_camera;
+
+		PhysicsWorld* _physics_world;
+
 		glm::vec3 _camera_3P_Position;
-		float _camera_1P_font = 0.08f; 
+		float _camera_1P_font = 0.15f; 
 		float _camera_1P_height = 0.8f;
 		float _CurrentFrameTime = 0.0f;
         float _LastFrameTime = 0.0f;
@@ -89,7 +95,7 @@ class Application{
 		std::vector<glm::vec3> _randPositions;
 		void initGLAD();
 		void initGLFW();
-		void initBullet();
+		void initPhysics();
 		void initAssets();
 		void render();
 		void handleInput();
@@ -111,7 +117,16 @@ class Application{
 		static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
 
 		}
+		void SyncPosition_Model_Rigibody(glm::vec3 position, btRigidBody* RigiBody) {
+			btTransform transform;
+			RigiBody->getMotionState()->getWorldTransform(transform);
+			
+			transform.setOrigin(btVector3(position.x, position.y, position.z));
+			RigiBody->setWorldTransform(transform);
+			RigiBody->getMotionState()->setWorldTransform(transform);
+		}
 
+		void updatePhysics(float deltaTime);
  	
 	public:
 		static void mouseCallback(GLFWwindow* window, double xpos, double ypos) {

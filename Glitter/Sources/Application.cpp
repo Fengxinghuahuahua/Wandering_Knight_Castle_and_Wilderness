@@ -12,19 +12,6 @@ void Application::initGLAD(){
     }
 }
 
-void Application::initBullet(){
-    // Bullet 基本组件
-    btDefaultCollisionConfiguration* collisionConfig = new btDefaultCollisionConfiguration();
-    btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfig);
-    btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase();
-    btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver();
-
-    // 动力学世界
-    btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfig);
-    dynamicsWorld->setGravity(btVector3(0, -9.8, 0));  // 设置重力
-
-}
-
 void Application::initGLFW(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -51,6 +38,60 @@ void Application::initGLFW(){
     glfwSetInputMode(_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
+void Application::initPhysics()
+{
+    _physics_world = new PhysicsWorld();
+
+    //create the bounding box of the house
+    glm::mat4 model;
+    model = glm::translate(glm::mat4(1.0f), _trans[0]);
+    model = glm::scale(model, glm::vec3(0.0005, 0.0005, 0.0005));
+    _houseBody = _physics_world->addModelCollision(_house, RIGIBODY_TYPE::BOX, model);
+    glm::vec3 knight_min = glm::vec3(0,0,0), knight_max = glm::vec3(0.6f, 0.8f, 0.4f);
+    btVector3 knight_position = btVector3((knight_min.x + knight_max.x) / 2.0f, (knight_min.y + knight_max.y) / 2.0f, (knight_min.z + knight_max.z) / 2.0f);
+    _knightBody = _physics_world->createRigidBody(_physics_world->createBoundingBoxCollisionShape(knight_min, knight_max), knight_position, 0.0f, false);
+    updatePhysics(0.f);
+    //register the collision listener and the handle logic
+    _physics_world->registerCollision(_houseBody, _knightBody, [](btRigidBody* body1, btRigidBody* body2, const btVector3& normal, Knight* app){
+        btTransform transform2;
+        body2->getMotionState()->getWorldTransform(transform2);
+
+        btVector3 position2 = transform2.getOrigin();
+
+        // 获取 knight 的位置直接从 _knightBody (body2)
+        btVector3 knightPosition = position2;  // 从body2获取knight的位置
+
+        btVector3 correction = btVector3(0.08,0.08,0.08) * normal;
+        knightPosition -= correction;  // 沿法线方向调整 knight 的位置
+
+        // 更新 _knightBody 的位置
+        transform2.setOrigin(knightPosition);
+        body2->getMotionState()->setWorldTransform(transform2);
+        app->SetPosition(glm::vec3(knightPosition.getX(), knightPosition.getY(), knightPosition.getZ()));
+
+        std::cout << "Corrected Knight Position: (" << knightPosition.getX() << ", " << knightPosition.getY() << ", " << knightPosition.getZ() << ")" << std::endl;
+    });
+
+}
+
+void Application::updatePhysics(float deltaTime) {
+    glm::vec3 knight_currentPosition = _knight->GetPosition();
+    glm::vec3 house_currentPosition = _trans[0] + glm::vec3(20.5324f, 0.0f, -20.9432);
+
+    SyncPosition_Model_Rigibody(knight_currentPosition, _knightBody);
+    SyncPosition_Model_Rigibody(house_currentPosition, _houseBody);
+
+    _physics_world->stepSimulation(deltaTime, _knight);
+
+    
+    btTransform transform;
+    _knightBody->getMotionState()->getWorldTransform(transform);
+    btVector3 btPosition = transform.getOrigin();
+    glm::vec3 newPosition(btPosition.x(), btPosition.y(), btPosition.z());
+    _knight->SetPosition(newPosition);
+}
+
+
 void Application::handleInput(){
     if(glfwGetKey(_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(_Window, true);
@@ -73,7 +114,10 @@ void Application::initShaders(){
 
 }
 void Application::update(){
+
     updateDt();
+    updatePhysics(_DeltaTime);
+    
 }
 void Application::updateDt(){
 	_CurrentFrameTime = static_cast<float>(glfwGetTime());
@@ -259,11 +303,14 @@ void Application::init(){
 
 	initGUI();
 	initAssets();
+    
 	_terrain->set2Zero();
 	_randPositions = _terrain->getRandomPositions();
 	glm::vec3 position = _knight->GetPosition();
 	glm::vec3 new_position = glm::vec3(position.x,_terrain->getHeight(position.x, position.z),position.z);
 	_knight->SetPosition(new_position);
+    //add to physics world
+    initPhysics();
 }
 
 void Application::initGUI(){
@@ -319,8 +366,11 @@ void Application::renderGUI(){
 }
 
 void Application::initAssets(){
-	_house = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/house/house2.fbx");
+    std::cout << "1" << endl;
+	_house = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/house/house.fbx");
+    std::cout << "2" << endl;
 	_tree1 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/Tree/Tree.pmx");
+    std::cout << "3" << endl;
 	_tree2 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/06/054.obj");
 	_tree3 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/07/053.obj");
 	_tree4 = new Model(std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/08/051.obj");
@@ -330,7 +380,7 @@ void Application::initAssets(){
                                                    std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Jump.dae",
                                                    std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/RunningJump.dae",
                                                    std::string(PROJECT_SOURCE_DIR) + "/Glitter/Model/knight/Running_Turn_180.dae",};
-	_knight = new Knight(knight_model_paths);
+	_knight = new Knight(knight_model_paths, glm::vec3(3.0f, 0.0f, 3.0f));
 	_grass = new Grass();
 	_terrain = new Terrain();
 	_nature_light = new NatureLight(glm::vec3(0.0f, 6.0f, 6.0f), glm::vec3(0.95f, 0.90f, 0.8f), &_current_camera,1.0f);

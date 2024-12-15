@@ -30,6 +30,7 @@
     }
     void Knight::Render(Shader& shader){
         // 设置骨骼动画矩阵
+        // std::cout<<"Character Position : "<< characterPosition.x << " " << characterPosition.y << " " << characterPosition.z << std::endl;
 		auto transforms = animator->GetFinalBoneMatrices();
 		for (int i = 0; i < transforms.size(); ++i)
 			shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);

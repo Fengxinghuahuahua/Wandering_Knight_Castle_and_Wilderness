@@ -44,6 +44,7 @@ public:
     vector<unsigned int> indices;
     vector<Texture>      textures;
     unsigned int VAO;
+    glm::vec3 min, max;
 
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
@@ -54,6 +55,16 @@ public:
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
+    }
+
+    void GetBoundingBox(glm::vec3 &Min, glm::vec3 &Max, const glm::mat4& transformMatrix) {
+        computeBoundingBox(Min, Max, transformMatrix);
+    }
+
+    glm::vec3 GetCenter()
+    {
+        glm::vec3 center((min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f);
+        return center;
     }
 
     // render the mesh
@@ -141,6 +152,19 @@ private:
 		glEnableVertexAttribArray(6);
 		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
         glBindVertexArray(0);
+    }
+
+    void computeBoundingBox(glm::vec3 &Min, glm::vec3 &Max, const glm::mat4& transformMatrix) {
+        Min = glm::vec3(FLT_MAX);
+        Max = glm::vec3(-FLT_MAX);
+
+        for (const Vertex& vertex : vertices) {
+            glm::vec4 transformedPos = transformMatrix * glm::vec4(vertex.Position, 1.0f);
+            glm::vec3 worldPos = glm::vec3(transformedPos);
+
+            Min = glm::min(Min, worldPos);
+            Max = glm::max(Max, worldPos);
+        }
     }
 };
 #endif

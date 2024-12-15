@@ -1,3 +1,6 @@
+
+#ifndef SOMECLASS_H
+#define SOMECLASS_H
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
@@ -49,6 +52,7 @@ public:
     void SetYaw(float yaw);
     glm::vec3 GetPosition();
     float GetYaw();
+    Model* GetModel(){return Models[IDLE_STATE];}   //just for calculate the Bounding Box, so simplify this function
 
 private:
     bool SetState(int s);
@@ -61,3 +65,5 @@ private:
     void ProcessAnimation(float deltatime);
     void ProcessPosition();
 };
+
+#endif
