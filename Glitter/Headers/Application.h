@@ -93,6 +93,7 @@ class Application{
         ImGuiIO* _ImGuiIo = nullptr;
 
 		std::vector<glm::vec3> _randPositions;
+        std::vector<GrassTile> _randGrassTiles;
 		void initGLAD();
 		void initGLFW();
 		void initPhysics();

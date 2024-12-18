@@ -59,7 +59,7 @@
             state[Character_State::WALK_STATE] = true;
             if(keys[KB_KEYS::SHIFT]){
                 state[Character_State::RUN_STATE] = true;
-                cout<<"run"<<endl;
+                //cout<<"run"<<endl;
             }
         }
         if(keys[KB_KEYS::SPACE]){

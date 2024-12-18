@@ -3,6 +3,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/fwd.hpp"
 #include "shader_m.h"
+#include <cstdlib>
 #include <iterator>
 #include <queue>
 #include <string>
@@ -11,10 +12,20 @@
 #include <cstdio>
 #include <vector>
 #include <Terrain.h>
+#include <winnt.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <iostream>
 #include <camera.h>
+
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <random>
+#include <algorithm>
+#include <iostream>
+
 
 
 void Terrain::loadHeightMap(std::string path,std::string texture_path,std::string normal_path,std::string displace_path){
@@ -172,7 +183,7 @@ void Terrain::render(Shader* shaders){
 	glBindTexture(GL_TEXTURE_2D,_terrainNormalID);
 
 	glBindVertexArray(_vao);
-	glDrawElements(GL_TRIANGLES, _indices.size()*3, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, _indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
@@ -260,9 +271,6 @@ void Terrain::calculateTangents(std::vector<float>&Vertices,std::vector<unsigned
 }
 
 float Terrain::getHeight(float x,float y){
-	int X = int(x*10-_bottom.x*10); 
-	int Y = int(y*10-_bottom.y*10);
-
 	float u = (x - _bottom.x) / (_top.x - _bottom.x) * (_width - 1);
 	float v = (y - _bottom.y) / (_top.y - _bottom.y) * (_height - 1);
 	int u0 = floor(u);
@@ -290,12 +298,156 @@ void Terrain::set2Zero(){
 	_top.y = -terrainY;
 }
 
-std::vector<glm::vec3> Terrain::getRandomPositions(){
-	std::vector<glm::vec3> result;
-	for(int i = 0;i<2000;i+=1){
-		int x = rand()%_width;
-		int y = rand()%_height;
-		result.push_back(glm::vec3(float(x)/10+_bottom.x,getHeightFromTexture(x, y, _heightMapData)/10,(float)(y)/10+_bottom.y));
-	}
+
+
+struct Point {
+    float x, y;
+};
+
+struct Grid {
+    int width, height;
+    float cell_size;
+    std::vector<std::vector<Point*>> cells;
+
+    Grid(float area_width, float area_height, float radius) {
+        cell_size = radius / std::sqrt(2);
+        width = static_cast<int>(std::ceil(area_width / cell_size));
+        height = static_cast<int>(std::ceil(area_height / cell_size));
+        cells.resize(width, std::vector<Point*>(height, nullptr));
+    }
+
+    bool isValid(const Point& p, float radius) const {
+        int grid_x = static_cast<int>(p.x / cell_size);
+        int grid_y = static_cast<int>(p.y / cell_size);
+
+        int x_min = std::max(grid_x - 2, 0);
+        int x_max = std::min(grid_x + 3, width);
+        int y_min = std::max(grid_y - 2, 0);
+        int y_max = std::min(grid_y + 3, height);
+
+        for (int i = x_min; i < x_max; ++i) {
+            for (int j = y_min; j < y_max; ++j) {
+                if (cells[i][j] != nullptr) {
+                    float dx = cells[i][j]->x - p.x;
+                    float dy = cells[i][j]->y - p.y;
+                    if (dx * dx + dy * dy < radius * radius) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    void addPoint(Point* p) {
+        int grid_x = static_cast<int>(p->x / cell_size);
+        int grid_y = static_cast<int>(p->y / cell_size);
+        cells[grid_x][grid_y] = p;
+    }
+};
+
+std::vector<Point> poissonDiskSampling(float area_width, float area_height, float radius, int k = 30) {
+    std::vector<Point> points;
+    std::vector<Point> activeList;
+
+    std::mt19937 rng(static_cast<unsigned int>(std::time(0)));
+    std::uniform_real_distribution<float> dist_x(0.0f, area_width);
+    std::uniform_real_distribution<float> dist_y(0.0f, area_height);
+    std::uniform_real_distribution<float> dist_radius(radius, 2.0f * radius);
+    std::uniform_real_distribution<float> dist_angle(0.0f, 2.0f * 3.1415926535);
+
+    Grid grid(area_width, area_height, radius);
+
+    Point first;
+    first.x = dist_x(rng);
+    first.y = dist_y(rng);
+    points.push_back(first);
+    activeList.push_back(first);
+    grid.addPoint(&points.back());
+
+    while (!activeList.empty()) {
+        std::uniform_int_distribution<int> dist_index(0, activeList.size() - 1);
+        int idx = dist_index(rng);
+        Point current = activeList[idx];
+        bool found = false;
+
+        for (int i = 0; i < k; ++i) {
+            float angle = dist_angle(rng);
+            float r = dist_radius(rng);
+            Point newPoint;
+            newPoint.x = current.x + r * std::cos(angle);
+            newPoint.y = current.y + r * std::sin(angle);
+
+            if (newPoint.x < 0 || newPoint.x >= area_width || newPoint.y < 0 || newPoint.y >= area_height)
+                continue;
+
+            if (grid.isValid(newPoint, radius)) {
+                points.push_back(newPoint);
+                activeList.push_back(newPoint);
+                grid.addPoint(&points.back());
+                found = true;
+            }
+        }
+
+        if (!found) {
+            activeList.erase(activeList.begin() + idx);
+        }
+    }
+
+    return points;
+}
+
+std::vector<TransForm> Terrain::getRandomPositions(){
+    std::vector<TransForm> result;
+    float area_width = 32.0f;
+    float area_height = 32.0f;
+    float min_distance = 2.0f;
+    int k = 3;
+    for(int i = 0;i<1024/area_width;i+=1){
+        for(int j = 0;j<1024/area_height;j+=1){
+            k = rand()%7;
+            std::vector<Point> samples = poissonDiskSampling(area_width, area_height, min_distance, k);
+            for(auto& each: samples){
+                float x = each.x+i*area_width;
+                float y = each.y+j*area_height;
+                glm::vec3 pos = glm::vec3(float(x)/10+_bottom.x,getHeightFromTexture(x, y, _heightMapData)/10,(float)(y)/10+_bottom.y);
+                float rotate = float(rand())/float(rand());
+                result.push_back({pos,rotate});
+            }
+        }
+    }
+	return result;
+}
+std::vector<GrassTile> Terrain::GetGrassTiles(float areaWidth,float minDistance, int k){
+    std::vector<GrassTile> result;
+    float area_width = areaWidth;
+    float area_height = areaWidth;
+    float min_distance = minDistance;
+    for(int i = 0;i<1024/area_width;i+=1){
+        for(int j = 0;j<1024/area_height;j+=1){
+            //k = rand()%7;
+            GrassTile tile;
+            glm::vec3 bottom_left = glm::vec3((i*area_width)/10+_bottom.x,0,(j*area_height)/10+_bottom.y);
+            glm::vec3 bottom_right = bottom_left+glm::vec3(area_width/10,0,0);
+            glm::vec3 top_left = bottom_left+glm::vec3(0,0,area_height/10);
+            glm::vec3 top_right = bottom_right+glm::vec3(0,0,area_height/10);
+            tile.corners.push_back(bottom_left);
+            tile.corners.push_back(bottom_right);
+            tile.corners.push_back(top_left);
+            tile.corners.push_back(top_right);
+
+            tile.center = glm::vec3((i*area_width+area_width/2)/10+_bottom.x,0,(j*area_height+area_height/2)/10+_bottom.y);
+            std::vector<Point> samples = poissonDiskSampling(area_width, area_height, min_distance, k);
+            for(auto& each: samples){
+                float x = each.x+i*area_width;
+                float y = each.y+j*area_height;
+                glm::vec3 pos = glm::vec3(float(x)/10+_bottom.x,getHeightFromTexture(x, y, _heightMapData)/10,(float)(y)/10+_bottom.y);
+                float rotate = float(rand())/float(rand());
+
+                tile.positions.push_back({pos,rotate});
+            }
+            result.push_back(tile);
+        }
+    }
 	return result;
 }

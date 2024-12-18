@@ -166,8 +166,8 @@ private:
             mesh.GetBoundingBox(min, max, transformMatrix);
             globalMin = glm::min(globalMin, min);
             globalMax = glm::max(globalMax, max);
-            std::cout << "Global Min: " << globalMin.x << ", " << globalMin.y << ", " << globalMin.z << std::endl;
-            std::cout << "Global Max: " << globalMax.x << ", " << globalMax.y << ", " << globalMax.z << std::endl;
+            //std::cout << "Global Min: " << globalMin.x << ", " << globalMin.y << ", " << globalMin.z << std::endl;
+            //std::cout << "Global Max: " << globalMax.x << ", " << globalMax.y << ", " << globalMax.z << std::endl;
         }
 
         std::cout << "--------------------" << endl;

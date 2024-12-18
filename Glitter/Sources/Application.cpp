@@ -152,6 +152,7 @@ void Application::run(){
 }
 void Application::render(){
 		processInput();
+        Frustum frustum = _current_camera->createFrustum();
         _knight->Update(_DeltaTime, _current_camera == _camera_3P, _current_camera, _Knight_KB);
 		glm::vec3 position = _knight->GetPosition();
 		glm::vec3 new_position = glm::vec3(position.x,_terrain->getHeight(position.x, position.z),position.z);
@@ -168,8 +169,8 @@ void Application::render(){
         _knight->Render(*_knight_shader);
 
 		_depth_map->use(lightSpaceMatrix, *_grass_shader);
-		for(auto& each:_randPositions)
-			_grass->render(_grass_shader, each, glfwGetTime());
+
+        _grass->instanceRender(_grass_shader, _randGrassTiles, frustum, glfwGetTime());
         _depth_map->use(lightSpaceMatrix, *_model_shader);
         model = glm::translate(glm::mat4(1.0f), _trans[0]);
         model = glm::scale(model, glm::vec3(0.0005, 0.0005, 0.0005));
@@ -216,8 +217,8 @@ void Application::render(){
         _knight->Render(*_knight_shader);
 
 		_nature_light->use(_depth_map->getDepthMap(), *_grass_shader);
-		for(auto& each:_randPositions)
-			_grass->render(_grass_shader, each, glfwGetTime());
+
+        _grass->instanceRender(_grass_shader, _randGrassTiles, frustum, glfwGetTime());
         //// sence
         _nature_light->use(_depth_map->getDepthMap(), *_model_shader);
         model = glm::translate(glm::mat4(1.0f), _trans[0]);
@@ -305,7 +306,8 @@ void Application::init(){
 	initAssets();
     
 	_terrain->set2Zero();
-	_randPositions = _terrain->getRandomPositions();
+	//_randPositions = _terrain->getRandomPositions();
+    _randGrassTiles = _terrain->GetGrassTiles(16.f,1.f, 20);
 	glm::vec3 position = _knight->GetPosition();
 	glm::vec3 new_position = glm::vec3(position.x,_terrain->getHeight(position.x, position.z),position.z);
 	_knight->SetPosition(new_position);

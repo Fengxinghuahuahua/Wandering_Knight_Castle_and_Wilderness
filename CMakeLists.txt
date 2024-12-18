@@ -83,9 +83,9 @@ add_custom_command(
 # 设定库和可执行文件的路径
 set(LIBRARY_PATH "${CMAKE_SOURCE_DIR}/lib/libassimp-5.dll")
 set(EXECUTABLE_PATH "${CMAKE_SOURCE_DIR}/build/Glitter")
-set(LIBRARY_PATH_STDCPP "E:/mingw64/bin/libstdc++-6.dll")
-set(LIBRARY_PATH_GCC "E:/mingw64/bin/libgcc_s_seh-1.dll")
-set(LIBRARY_PATH_WINPTHREAD "E:/mingw64/bin/libwinpthread-1.dll")
+#set(LIBRARY_PATH_STDCPP "E:/mingw64/bin/libstdc++-6.dll")
+#set(LIBRARY_PATH_GCC "E:/mingw64/bin/libgcc_s_seh-1.dll")
+#set(LIBRARY_PATH_WINPTHREAD "E:/mingw64/bin/libwinpthread-1.dll")
 
 # 在可执行文件构建之后复制动态库
 add_custom_command(
@@ -94,20 +94,20 @@ add_custom_command(
     ${LIBRARY_PATH} $<TARGET_FILE_DIR:${PROJECT_NAME}>
 )
 
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${LIBRARY_PATH_STDCPP} $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
-
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${LIBRARY_PATH_GCC} $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
-
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${LIBRARY_PATH_WINPTHREAD} $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
+#add_custom_command(
+#    TARGET ${PROJECT_NAME} POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#    ${LIBRARY_PATH_STDCPP} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#)
+#
+#add_custom_command(
+#    TARGET ${PROJECT_NAME} POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#    ${LIBRARY_PATH_GCC} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#)
+#
+#add_custom_command(
+#    TARGET ${PROJECT_NAME} POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#    ${LIBRARY_PATH_WINPTHREAD} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+#)

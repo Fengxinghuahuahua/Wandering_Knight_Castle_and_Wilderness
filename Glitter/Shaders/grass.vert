@@ -3,7 +3,8 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 color;
 layout (location = 2) in float height;
 layout (location = 3) in vec3 center;
-
+layout(location = 4) in vec3 normal;
+layout (location = 5) in mat4 instanceModel; // 每个实例的模型矩阵
 out VS_OUT {
     vec3 FragPos;
     vec3 Normal;
@@ -25,7 +26,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float time;
-
+uniform int isInstance;
 uniform mat4 lightSpaceMatrix;
 uniform int depthTest;
 
@@ -109,6 +110,7 @@ vec3 getAnimatedPos(vec3 basePos, float height, float noise){
 
 void main()
 {
+    mat4 vModel = isInstance==1?instanceModel:model;
     vs_out.tex = 0;
     
     vs_out.vertexColor = color;
@@ -117,7 +119,8 @@ void main()
 	//float factor = 0.05f;
 	//float factor = 0.06f;
 	vec3 factor = vec3(0.04f,0.009f,0.04f);
-	vec4 trans_center = model*vec4(center,1.f);
+	//vec4 trans_center = model*vec4(center,1.f);
+	vec4 trans_center =vModel*vec4(center,1.f);
     vec3 windStrength = vec3(windDir.x*factor.x,windDir.y*factor.y,windDir.z*factor.z);  // 风的强度
 
     float noise = infinitePerlin(trans_center.xz*20.f);  
@@ -126,10 +129,12 @@ void main()
 	windEffect.y = -abs(windEffect.y)*0.2;
     vec3 displacedPosition = aPos + windEffect;
 
-    gl_Position = (depthTest == 1) ? lightSpaceMatrix * model * vec4(displacedPosition, 1.0f) : projection * view * model * vec4(displacedPosition, 1.0f);
+    //gl_Position = (depthTest == 1) ? lightSpaceMatrix * model * vec4(displacedPosition, 1.0f) : projection * view * model * vec4(displacedPosition, 1.0f);
+    gl_Position = (depthTest == 1) ? lightSpaceMatrix * vModel * vec4(displacedPosition, 1.0f) : projection * view * vModel * vec4(displacedPosition, 1.0f);
     //gl_Position = projection * view * model * vec4(getAnimatedPos(aPos,height,noise), 1.0f);
-    vs_out.FragPos = vec3(model * vec4(displacedPosition, 1.0f));
-    vs_out.Normal = vec3(0.0f, 1.0f, 1.0f);
+    //vs_out.FragPos = vec3(model * vec4(displacedPosition, 1.0f));
+    vs_out.FragPos = vec3(vModel * vec4(displacedPosition, 1.0f));
+    vs_out.Normal = vec3(0.0f, 1.0f, 0.0f);
     vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
 
     mt_p.ambient = 0.8;

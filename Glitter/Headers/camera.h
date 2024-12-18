@@ -23,6 +23,34 @@ const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
 
 
+struct Plane{
+    glm::vec3 _Normal = {0.f, 1.f, 0.f};
+    // distance from origin to the nearest point in the plane
+    float _Distance = 0.f;
+
+    Plane() = default;
+
+	Plane(const glm::vec3& p1, const glm::vec3& norm)
+		: _Normal(glm::normalize(norm)),
+		_Distance(glm::dot(_Normal, p1))
+	{
+    }
+
+	float getSignedDistanceToPlane(const glm::vec3& point) const
+	{
+		return glm::dot(_Normal, point) - _Distance;
+	}
+};
+
+struct Frustum{
+    Plane _TopFace;
+    Plane _BottomFace;
+    Plane _LeftFace;
+    Plane _RightFace;
+    Plane _FarFace;
+    Plane _NearFace;
+};
+
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
 {
@@ -36,6 +64,9 @@ public:
     // euler Angles
     float Yaw;
     float Pitch;
+
+    float NearPlane = 0.01f;
+    float FarPlane = 15.f;
     // camera options
     float MovementSpeed;
     float MouseSensitivity;
@@ -120,7 +151,25 @@ public:
         if (Zoom > 45.0f)
             Zoom = 45.0f;
     }
-
+    Frustum createFrustum()const {
+        glm::vec3 r = glm::normalize(glm::cross(Front, Up));
+        Frustum frustum;
+        float fovRadians = glm::radians(Zoom);
+        float halfVSide = FarPlane * tanf(fovRadians * .5f);
+        float halfHSide = halfVSide * AspectRatio;
+        glm::vec3 frontMultFar = FarPlane * Front;
+        glm::vec3 nearCenter = Position + Front * NearPlane;
+        glm::vec3 farCenter = Position + Front * FarPlane;
+        glm::vec3 nearNormal = Front;
+        glm::vec3 farNormal = -Front;
+        frustum._NearFace = { nearCenter, nearNormal };
+        frustum._FarFace = { farCenter, farNormal };
+        frustum._RightFace = { Position, glm::cross(Up,frontMultFar-r*halfHSide) };
+        frustum._LeftFace = { Position, glm::cross(frontMultFar+r*halfHSide,Up) };
+        frustum._TopFace = { Position, glm::cross(r,frontMultFar-Up*halfVSide) };
+        frustum._BottomFace = { Position, glm::cross(frontMultFar+Up*halfVSide, r) };
+        return frustum;
+    }
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
