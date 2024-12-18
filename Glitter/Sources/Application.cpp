@@ -21,7 +21,7 @@ void Application::initGLFW(){
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);  // 隐藏窗口装饰（标题栏和工具栏）
     // glfw window creation
     _Window = glfwCreateWindow(_Width, _Height, "", NULL, NULL);
     if (_Window == NULL) {
@@ -307,7 +307,7 @@ void Application::init(){
     
 	_terrain->set2Zero();
 	//_randPositions = _terrain->getRandomPositions();
-    _randGrassTiles = _terrain->GetGrassTiles(16.f,1.f, 20);
+    _randGrassTiles = _terrain->GetGrassTiles(16.f,0.9f, 20);
 	glm::vec3 position = _knight->GetPosition();
 	glm::vec3 new_position = glm::vec3(position.x,_terrain->getHeight(position.x, position.z),position.z);
 	_knight->SetPosition(new_position);

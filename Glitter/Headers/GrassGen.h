@@ -23,7 +23,7 @@ class GrassGenerator{
 		const float MAX_WIDTH = 0.006f;
 		const float MIN_WIDTH = 0.008f;
 		const float MAX_HEIGHT = 0.1f; 
-		const float MIN_HEIGHT = 0.07f;
+		const float MIN_HEIGHT = 0.05f;
 		const float MAX_GREEN = 1.5f;
 		const float MIN_GREEN = 0.5f;
         

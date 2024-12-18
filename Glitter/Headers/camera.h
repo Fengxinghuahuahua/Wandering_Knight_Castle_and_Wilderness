@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -66,7 +67,7 @@ public:
     float Pitch;
 
     float NearPlane = 0.01f;
-    float FarPlane = 15.f;
+    float FarPlane = 20.f;
     // camera options
     float MovementSpeed;
     float MouseSensitivity;
@@ -164,8 +165,8 @@ public:
         glm::vec3 farNormal = -Front;
         frustum._NearFace = { nearCenter, nearNormal };
         frustum._FarFace = { farCenter, farNormal };
-        frustum._RightFace = { Position, glm::cross(Up,frontMultFar-r*halfHSide) };
-        frustum._LeftFace = { Position, glm::cross(frontMultFar+r*halfHSide,Up) };
+        frustum._RightFace = { Position, glm::cross(Up,frontMultFar+r*halfHSide) };
+        frustum._LeftFace = { Position, glm::cross(frontMultFar-r*halfHSide,Up) };
         frustum._TopFace = { Position, glm::cross(r,frontMultFar-Up*halfVSide) };
         frustum._BottomFace = { Position, glm::cross(frontMultFar+Up*halfVSide, r) };
         return frustum;

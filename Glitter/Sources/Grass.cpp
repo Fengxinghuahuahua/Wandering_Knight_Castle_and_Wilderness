@@ -64,8 +64,12 @@ bool Grass::isInFrustum(const Frustum& frustum, const GrassTile& tile){
     return false;
 }
 bool Grass::isInFrustum(const Frustum& frustum, const glm::vec3 &l){
-    return !(!isInFrontOfPlane(frustum._LeftFace, l)
-        &&isInFrontOfPlane(frustum._RightFace, l))
+    //return !(!isInFrontOfPlane(frustum._LeftFace, l)
+    //    &&isInFrontOfPlane(frustum._RightFace, l))
+    //    &&isInFrontOfPlane(frustum._FarFace, l)
+    //    &&isInFrontOfPlane(frustum._NearFace, l);
+    return isInFrontOfPlane(frustum._LeftFace, l)
+        &&isInFrontOfPlane(frustum._RightFace, l)
         &&isInFrontOfPlane(frustum._FarFace, l)
         &&isInFrontOfPlane(frustum._NearFace, l);
 }
@@ -149,7 +153,7 @@ void Grass::instanceRender(Shader* shaders, std::vector<GrassTile>& tiles, Frust
         }
         float d = frustum._NearFace.getSignedDistanceToPlane(tile.center);
         for (auto& grass : tile.positions) {
-            if(d>7.f){
+            if(d>10.f){
                 lowLODModel.push_back(grass.model);
             }
             else
