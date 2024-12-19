@@ -103,7 +103,7 @@ public:
     }
 
 	glm::mat4 getProjection(){
-		glm::mat4 projection = glm::perspective(glm::radians(Zoom), AspectRatio, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(Zoom), AspectRatio, 0.1f, 200.0f);
 		return projection;
 	}
 

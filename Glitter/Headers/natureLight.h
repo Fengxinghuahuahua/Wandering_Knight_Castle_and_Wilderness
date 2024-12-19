@@ -24,7 +24,7 @@ public:
         calculateLightSpaceMatrix();
     }
 
-    void calculateLightSpaceMatrix(float near_plane = 1.0f, float far_plane = 20.0f) {
+    void calculateLightSpaceMatrix(float near_plane = 1.0f, float far_plane = 100.0f) {
         glm::mat4 lightProjection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane);
         glm::mat4 lightView = glm::lookAt(direction, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         lightSpaceMatrix = lightProjection * lightView;

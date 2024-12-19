@@ -17,15 +17,12 @@ private:
 
 public:
     CollisionListener(btRigidBody* bodyA, btRigidBody* bodyB) : bodyA_(bodyA), bodyB_(bodyB) {}
-
     bool isCollisionDetected() const {
         return collisionDetected_;
     }
-
     btVector3 getCollisionNormal() const {
         return collisionNormal_;
     }
-
     virtual btScalar addSingleResult(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0, int partId0, int index0,
                                      const btCollisionObjectWrapper* colObj1, int partId1, int index1) override {
         const btCollisionObject* objA = colObj0->getCollisionObject();
@@ -35,7 +32,6 @@ public:
             collisionDetected_ = true;
             collisionNormal_ = cp.m_normalWorldOnB;  // 获取碰撞法线
         }
-
         return 0;
     }
 };

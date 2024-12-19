@@ -8,6 +8,7 @@
 #include "model_animation.h"
 #include "natureLight.h"
 #include "skybox.h"
+#include <cloud.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
@@ -45,8 +46,12 @@ class Application{
 		Terrain* _terrain;
 		Shader* _terrain_shader;
 
+		glm::vec3 _light_dir;
 		NatureLight* _nature_light;
 		DepthMap * _depth_map;
+
+		Cloud* _cloud;
+		Shader* _rayMarching_shader;
 
 		//physics world
 		btRigidBody* _houseBody, *_knightBody;

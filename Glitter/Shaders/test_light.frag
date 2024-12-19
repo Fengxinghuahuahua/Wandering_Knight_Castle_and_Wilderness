@@ -11,7 +11,6 @@ in VS_OUT {
 	mat3 TBN;
 } fs_in;
 
-
 in MT_P {
     float ambient;
     float diffuse;
@@ -42,18 +41,23 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     vec3 lightDir = normalize(lightPos);
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 
+    //float dr = abs(projCoords.z - closestDepth);
+    //int pcf_size = min(4, int(dr*10));
+    //pcf_size = max(pcf_size, 2);
+    int pcf_size = 2;
+
     // PCF
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -2; x <= 2; ++x)
+    for(int x = -pcf_size; x <= pcf_size; ++x)
     {
-        for(int y = -2; y <= 2; ++y)
+        for(int y = -pcf_size; y <= pcf_size; ++y)
         {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
             shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
         }    
     }
-    shadow /= 25.0;
+    shadow /= (pcf_size*2+1) * (pcf_size*2+1); 
 
     if(projCoords.z > 1.0)
         shadow = 0.0;
@@ -97,7 +101,7 @@ void main()
         vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
 
         vec3 fogColor = vec3(0.5f, 0.5f, 0.5f);
-        float fogFactor = (70.0f - length((viewPos - fs_in.FragPos).xyz)) / (70.0f - 10.0f);
+        float fogFactor = exp(-0.001 * pow(length((viewPos - fs_in.FragPos).xyz), 2));
         fogFactor = clamp(fogFactor, 0.0, 1.0);  // 限制在0到1之间
 
         // 最终颜色：物体颜色和雾的颜色按比例混合

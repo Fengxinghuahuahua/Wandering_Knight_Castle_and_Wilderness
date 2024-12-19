@@ -258,6 +258,12 @@ void Application::render(){
         // skybox render
         _skybox->render();
 
+        // cloud
+        _cloud->bind();
+        _skybox->render();
+        _cloud->unbind();
+        _cloud->draw(_light_dir, glfwGetTime());
+
         // water
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -301,6 +307,8 @@ void Application::init(){
 	);
 	_current_camera = _camera_3P;
     _Knight_KB.resize(KB_KEYS::KK_END);
+
+    _light_dir = glm::vec3(0.0f, 6.0f, 6.0f);
 
 	initGUI();
 	initAssets();
@@ -385,7 +393,7 @@ void Application::initAssets(){
 	_knight = new Knight(knight_model_paths, glm::vec3(3.0f, 0.0f, 3.0f));
 	_grass = new Grass();
 	_terrain = new Terrain();
-	_nature_light = new NatureLight(glm::vec3(0.0f, 6.0f, 6.0f), glm::vec3(0.95f, 0.90f, 0.8f), &_current_camera,1.0f);
+	_nature_light = new NatureLight(_light_dir, glm::vec3(0.95f, 0.90f, 0.8f), &_current_camera, 1.0f);
 
 	_depth_map = new DepthMap(512,512);
     // skyBox
@@ -398,6 +406,8 @@ void Application::initAssets(){
         std::string(PROJECT_SOURCE_DIR) + "/Glitter/Textures/skybox/back.jpg"
     };
 	_skybox = new Skybox(skybox_textures,&_current_camera);
+
+    _cloud = new Cloud(128, 36, 4, &_current_camera);
 }
 
 void Application::processInput(){
