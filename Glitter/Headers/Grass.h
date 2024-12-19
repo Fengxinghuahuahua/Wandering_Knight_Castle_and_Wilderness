@@ -8,6 +8,7 @@ class Grass{
 private:
 	float* _high_vertices;
     float* _low_vertices;
+    GLuint _instance_buffer;
     std::vector<glm::mat4> highLODModel;
     std::vector<glm::mat4> lowLODModel;
 	unsigned int _high_vbo, _high_vao;

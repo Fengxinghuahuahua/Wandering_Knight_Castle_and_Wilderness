@@ -49,6 +49,10 @@ Grass::Grass(){
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vex), (void*)(10*sizeof(float)));
     glEnableVertexAttribArray(4);
+
+    glGenBuffers(1, &_instance_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, _instance_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 30000 , nullptr, GL_STATIC_DRAW);
 }
 bool Grass::isInFrontOfPlane(const Plane& plane, const glm::vec3& pos){
     float result = plane.getSignedDistanceToPlane(pos);
@@ -161,10 +165,16 @@ void Grass::instanceRender(Shader* shaders, std::vector<GrassTile>& tiles, Frust
         }
     }
 
-    GLuint instanceBuffer;
-    glGenBuffers(1, &instanceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * highLODModel.size(), &highLODModel[0], GL_STATIC_DRAW);
+    //std::cout<<highLODModel.size()<<" "<<lowLODModel.size()<<std::endl;
+
+    if (highLODModel.size() > 30000) { 
+        glBindBuffer(GL_ARRAY_BUFFER, _instance_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * highLODModel.size(), &highLODModel[0], GL_STATIC_DRAW);
+    }
+    else if (!highLODModel.empty()) {
+        glBindBuffer(GL_ARRAY_BUFFER, _instance_buffer);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * highLODModel.size(), &highLODModel[0]);
+    }
 
     glBindVertexArray(_high_vao); 
     for (GLuint i = 0; i < 4; ++i) {
@@ -175,10 +185,14 @@ void Grass::instanceRender(Shader* shaders, std::vector<GrassTile>& tiles, Frust
     glBindVertexArray(_high_vao);  
     glDrawArraysInstanced(GL_TRIANGLES, 0, _high_num_vertices, highLODModel.size());
 
-    glGenBuffers(1, &instanceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * lowLODModel.size(), &lowLODModel[0], GL_STATIC_DRAW);
-
+    if (lowLODModel.size() > 30000) { 
+        glBindBuffer(GL_ARRAY_BUFFER, _instance_buffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * lowLODModel.size(), &lowLODModel[0], GL_STATIC_DRAW);
+    }
+    else if (!lowLODModel.empty()) {
+        glBindBuffer(GL_ARRAY_BUFFER, _instance_buffer);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * lowLODModel.size(), &lowLODModel[0]);
+    }
     glBindVertexArray(_low_vao);  
     for (GLuint i = 0; i < 4; ++i) {
         glVertexAttribPointer(5 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));

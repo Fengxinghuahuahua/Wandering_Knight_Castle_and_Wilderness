@@ -228,8 +228,6 @@ void GrassGenerator::GetVex(std::vector<vex>&oArray,int LOD,int numOfBlades){
     int num = numOfBlades;
 	for(int i = 0;i<num;i+=1){
 		int instanceIndex = i;
-    	// Store data in buffers
-	//	glm::vec4 position = getRandomPosition(instanceIndex);
 
 		glm::vec4 position = getRandomPosition(glm::vec2(instanceIndex, _tile_id), glm::vec2(_tile_id, instanceIndex));
 		//glm::uint clumpId = getClumpId(glm::vec3(position.x,position.y,position.z));
