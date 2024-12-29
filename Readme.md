@@ -15,7 +15,7 @@ project-root/
 ```
 
 ### Screenshots
-![post](https://github.com/Fengxinghuahuahua/Wandering_Knight_Castle_and_Wilderness/images/post.png)
+![post](./images/post.png)
 
 ## Acknowledgments
 - [LearnOpenGL](https://learnopengl.com/) for tutorials and resources.
